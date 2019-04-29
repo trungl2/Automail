@@ -59,7 +59,7 @@ public class Robot {
      * This is called on every time step
      * @throws ExcessiveDeliveryException if robot delivers more than the capacity of the tube without refilling
      */
-    public void step() throws ExcessiveDeliveryException {    	
+    public void step() throws ExcessiveDeliveryException {
     	switch(current_state) {
     		/** This state is triggered when the robot is returning to the mailroom after a delivery */
     		case RETURNING:
@@ -91,6 +91,8 @@ public class Robot {
     		case DELIVERING:
     			if(current_floor == destination_floor){ // If already here drop off either way
                     /** Delivery complete, report this to the simulator! */
+    				
+    				//ensures that only 1 mail item is delivered whether or not the robot is in a group or individually
     				if (robotDelivering || (deliveryItem.getWeight() < INDIVIDUAL_MAX_WEIGHT)) {
     					delivery.deliver(deliveryItem); 
     					robotDelivering = false;
@@ -118,6 +120,7 @@ public class Robot {
     			}
                 break;
     	}
+    	
     }
 
     /**
@@ -196,6 +199,11 @@ public class Robot {
 	
 	public String getID() { //remove later
 		return id;
+	}
+	
+	public void resetPriority() {
+		deliveryItem = null;
+		robotDelivering = false;
 	}
 
 }
