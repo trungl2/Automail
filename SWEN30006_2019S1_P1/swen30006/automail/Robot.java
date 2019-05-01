@@ -31,6 +31,8 @@ public class Robot {
     private int deliveryCounter;
     
     private boolean robotDelivering = false;
+    private boolean inGroup = false;
+    private int inGroupStep = 0;
     
 
     /**
@@ -76,6 +78,7 @@ public class Robot {
                 } else {
                 	/** If the robot is not at the mailroom floor yet, then move towards it! */
                     moveTowards(Building.MAILROOM_LOCATION);
+                    
                 	break;
                 }
     		case WAITING:
@@ -87,6 +90,7 @@ public class Robot {
         			setRoute(); //--note route is set towards the item in hand first (regardless of where item in tube is
                 	changeState(RobotState.DELIVERING);
                 }
+                
                 break;
     		case DELIVERING:
     			if(current_floor == destination_floor){ // If already here drop off either way
@@ -95,6 +99,7 @@ public class Robot {
     				//ensures that only 1 mail item is delivered whether or not the robot is in a group or individually
     				if (robotDelivering || (deliveryItem.getWeight() < INDIVIDUAL_MAX_WEIGHT)) {
     					delivery.deliver(deliveryItem); 
+    					inGroup = false;
     					robotDelivering = false;
     				}
                     
@@ -136,11 +141,24 @@ public class Robot {
      * @param destination the floor towards which the robot is moving
      */
     private void moveTowards(int destination) {
-        if(current_floor < destination){
-            current_floor++;
-        } else {
-            current_floor--;
-        }
+    	if (inGroup) {
+    		inGroupStep += 1;
+    		if (inGroupStep == 3) {
+    	        if(current_floor < destination) {
+    	            current_floor++;
+    	        } else {
+    	            current_floor--;
+    	        }
+    	        inGroupStep = 0;
+    		}
+    	} else {
+	        if(current_floor < destination) {
+	            current_floor++;
+	        } else {
+	            current_floor--;
+	        }
+    	}
+
     }
     
     private String getIdTube() {
@@ -204,6 +222,11 @@ public class Robot {
 	public void resetPriority() {
 		deliveryItem = null;
 		robotDelivering = false;
+		inGroup = false;
+	}
+	
+	public void setInGroup() {
+		inGroup = true;
 	}
 
 }

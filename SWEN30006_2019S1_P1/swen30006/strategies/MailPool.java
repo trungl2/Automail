@@ -122,7 +122,7 @@ public class MailPool implements IMailPool {
 				System.out.println("light removed");
 				
 			
-			} else if (nextMailItem.getWeight() <= Robot.TRIPLE_MAX_WEIGHT) { /*maybe remove <= --> <*/
+			} else if (nextMailItem.getWeight() <= Robot.TRIPLE_MAX_WEIGHT) {
 				
 				//if there is already a group of robots about to carry the heavy item
 				//add the robot to the list robots to carry the heavy item
@@ -136,10 +136,12 @@ public class MailPool implements IMailPool {
 					groupRobotCarry = new GroupRobotCarry(new ArrayList<Robot>(Arrays.asList(robot)), nextMailItem);
 					System.out.println("create group robot id: " + robot.getID());
 				}
+				
+				robot.setInGroup();
 
 				
 				//remove the item at the start of the list when enough robots can carry it
-				if (((nextMailItem.getWeight() < Robot.PAIR_MAX_WEIGHT) && (groupRobotCarry.getNumRobots() == 2))
+				if (((nextMailItem.getWeight() <= Robot.PAIR_MAX_WEIGHT) && (groupRobotCarry.getNumRobots() == 2))
 						|| (groupRobotCarry.getNumRobots() == 3)) {
 					j.remove();
 					itemRemoved = true;
@@ -159,21 +161,22 @@ public class MailPool implements IMailPool {
 			
 			if (pool.size() > 0) {
 				
-				/*ListIterator<Item> dupj = (ListIterator<Item>) j.clone();
-				Item nextj = j.next();*/
 				
-				/*get the new item at the start of the list if prior item was added to hand*/
-				if (itemRemoved) {
+				
+				while(j.hasNext() && robot.getTube() == null) {
+					
 					nextMailItem = j.next().mailItem;
-					System.out.println("next item for tube");
+					System.out.println("tube look: " + nextMailItem.getWeight());
+					if (nextMailItem.getWeight() <= Robot.INDIVIDUAL_MAX_WEIGHT) {
+						robot.addToTube(nextMailItem);
+						j.remove();
+						
+						System.out.println("tube remove2");
+						break;
+					}
 				}
-				
-				/*if robot can carry by itself and there is are still items in the pool, add the item to the tube*/
-				if (nextMailItem.getWeight() < Robot.INDIVIDUAL_MAX_WEIGHT) {
-					robot.addToTube(nextMailItem);
-					j.remove();
-					System.out.println("tube remove");
-				}
+					
+
 				
 			}
 			
