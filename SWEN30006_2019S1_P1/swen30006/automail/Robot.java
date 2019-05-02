@@ -97,7 +97,7 @@ public class Robot {
                     /** Delivery complete, report this to the simulator! */
     				
     				//ensures that only 1 mail item is delivered whether or not the robot is in a group or individually
-    				if (robotDelivering || (deliveryItem.getWeight() < INDIVIDUAL_MAX_WEIGHT)) {
+    				if (robotDelivering || (deliveryItem.getWeight() <= INDIVIDUAL_MAX_WEIGHT)) {
     					delivery.deliver(deliveryItem); 
     					inGroup = false;
     					robotDelivering = false;

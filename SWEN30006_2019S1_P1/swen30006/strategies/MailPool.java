@@ -116,7 +116,7 @@ public class MailPool implements IMailPool {
 
 			
 			//if robot can carry by itself, do it
-			if(nextMailItem.getWeight() < Robot.INDIVIDUAL_MAX_WEIGHT)  { //--added
+			if(nextMailItem.getWeight() <= Robot.INDIVIDUAL_MAX_WEIGHT)  { //--added
 				j.remove();
 				itemRemoved = true;
 				System.out.println("light removed");
