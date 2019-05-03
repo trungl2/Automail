@@ -70,10 +70,10 @@ public class MailPool implements IMailPool {
 			do {
 				while (i.hasNext()) loadRobot(i);
 				
+				//free the robots which were waiting to carry a heavy item
 				if (freeRobots != null) {
 					for(Robot freeRobot: freeRobots) {
 						registerWaiting(freeRobot);
-						System.out.println("freed robot" + freeRobot.getID());
 					}
 					freeRobots = null;
 				}
@@ -84,76 +84,55 @@ public class MailPool implements IMailPool {
         } 
 	}
 	
-	
-	//PROBLEM: if you have robots about to carry an item, but items with higher priority comes in, what should be done?
-	//note higher priority items becomes the next mail item in the list -->carry the item
 	private void loadRobot(ListIterator<Robot> i) throws ItemTooHeavyException {
 		Robot robot = i.next();
 		MailItem nextMailItem;
 		assert(robot.isEmpty());
 		boolean itemRemoved = false;
 		
-		// System.out.printf("P: %3d%n", pool.size());
 		ListIterator<Item> j = pool.listIterator();
 		if (pool.size() > 0) {
 			try {
 			nextMailItem = j.next().mailItem;
-			System.out.println("curr robot: " + robot.getID());
-			System.out.println("next mail item: " + nextMailItem.getWeight());
 			
-			//deals with case where higher priority item comes in while robots are queuing to carry a heavy item
-			//--> disbands the queue and carries the new item
+			//case: when higher priority item comes in while robots are queuing to carry a heavy item
+			//solution: disbands the queue and carries the new item
 			if ((groupRobotCarry != null) && (nextMailItem != groupRobotCarry.getMailItem())) {
 				groupRobotCarry.resetPriority();
 				freeRobots = groupRobotCarry.getRobots();
 				groupRobotCarry = null;
-				System.out.println("reset priority");
-				
 			}
 			
-			robot.addToHand(nextMailItem); // hand first as we want higher priority delivered first
-			
+			// hand first as we want higher priority delivered first
+			robot.addToHand(nextMailItem); 
 
-			
-			//if robot can carry by itself, do it
-			if(nextMailItem.getWeight() <= Robot.INDIVIDUAL_MAX_WEIGHT)  { //--added
+			//robot carries item if it is light enough
+			if(nextMailItem.getWeight() <= Robot.INDIVIDUAL_MAX_WEIGHT)  {
 				j.remove();
 				itemRemoved = true;
-				System.out.println("light removed");
 				
-			
+				
 			} else if (nextMailItem.getWeight() <= Robot.TRIPLE_MAX_WEIGHT) {
 				
-				//if there is already a group of robots about to carry the heavy item
-				//add the robot to the list robots to carry the heavy item
+				//add robot to carry a heavy item if a group already exists
 				if ((groupRobotCarry != null) && !groupRobotCarry.foundRobot(robot)) {
 					groupRobotCarry.addRobot(robot);
-					System.out.println("group robot id: " + robot.getID());
 					
 				} else {
-				//or create a new list of robots to carry the heavy item
-					robot.setRobotDelivering(); //set the first robot to be the one to deliver the mail item
+				//create a group to carry a heavy item if one does not already exists
+					robot.setRobotDelivering();
 					groupRobotCarry = new GroupRobotCarry(new ArrayList<Robot>(Arrays.asList(robot)), nextMailItem);
-					System.out.println("create group robot id: " + robot.getID());
 				}
 				
 				robot.setInGroup();
 
 				
-				//remove the item at the start of the list when enough robots can carry it
+				//remove from the pool when there is enough robots can carry it
 				if (((nextMailItem.getWeight() <= Robot.PAIR_MAX_WEIGHT) && (groupRobotCarry.getNumRobots() == 2))
 						|| (groupRobotCarry.getNumRobots() == 3)) {
 					j.remove();
 					itemRemoved = true;
-					System.out.println("heavy removed");
-					
-					
-					
 				} 
-				
-				if (groupRobotCarry != null) {
-					System.out.println("group num robots" + groupRobotCarry.getNumRobots());
-				}
 				
 			} else {
 				throw new ItemTooHeavyException();
@@ -161,45 +140,28 @@ public class MailPool implements IMailPool {
 			
 			if (pool.size() > 0) {
 				
-				
-				
+				//traverses through the mail pool to find an item that the tube can carry
 				while(j.hasNext() && robot.getTube() == null) {
-					
 					nextMailItem = j.next().mailItem;
-					System.out.println("tube look: " + nextMailItem.getWeight());
 					if (nextMailItem.getWeight() <= Robot.INDIVIDUAL_MAX_WEIGHT) {
 						robot.addToTube(nextMailItem);
 						j.remove();
-						
-						System.out.println("tube remove2");
 						break;
 					}
 				}
-					
-
-				
 			}
 			
 			
-			
-
-			
-			/*if there is enough robots to carry, starting going*/
+			//dispatches the robots when there is enough robots to carry the item
 			if ((groupRobotCarry != null) && itemRemoved) {
 				for (Robot a_robot: groupRobotCarry.getRobots()) {
 					groupRobotCarry = null;
 					a_robot.dispatch();
-					System.out.println("heavy dispatch");
 				}
-			/*or if only one robot is required to carry the item, start going*/
 			} else if (groupRobotCarry == null && itemRemoved) {
-				robot.dispatch(); // send the robot off if it has any items to deliver
-				System.out.println("light dispatch");
-			}
-			System.out.println(i.hasNext());
-				
-			i.remove();       // remove from mailPool queue
-			
+				robot.dispatch();
+			}		
+			i.remove();
 
 			} catch (Exception e) { 
 	            throw e; 

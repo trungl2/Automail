@@ -23,7 +23,7 @@ public class Robot {
     private int current_floor;
     private int destination_floor;
     private IMailPool mailPool;
-    private boolean receivedDispatch; // robot has any items to deliver (defined in mailpool)
+    private boolean receivedDispatch;
     
     private MailItem deliveryItem = null;
     private MailItem tube = null;
@@ -49,7 +49,7 @@ public class Robot {
         current_floor = Building.MAILROOM_LOCATION;
         this.delivery = delivery;
         this.mailPool = mailPool;
-        this.receivedDispatch = false; //--tells us if the robot received the order to go and deliver something
+        this.receivedDispatch = false;
         this.deliveryCounter = 0;
     }
     
@@ -83,20 +83,20 @@ public class Robot {
                 }
     		case WAITING:
                 /** If the StorageTube is ready and the Robot is waiting in the mailroom then start the delivery */
-    			//-- robot is loaded and received dispatch order at MailPool
                 if(!isEmpty() && receivedDispatch){
                 	receivedDispatch = false;
                 	deliveryCounter = 0; // reset delivery counter
-        			setRoute(); //--note route is set towards the item in hand first (regardless of where item in tube is
+        			setRoute();
                 	changeState(RobotState.DELIVERING);
                 }
                 
                 break;
     		case DELIVERING:
-    			if(current_floor == destination_floor){ // If already here drop off either way
+    			if(current_floor == destination_floor){
                     /** Delivery complete, report this to the simulator! */
     				
-    				//ensures that only 1 mail item is delivered whether or not the robot is in a group or individually
+    				//ensures that only 1 mail item is delivered whether or not the robot is in a group
+    				//or working individually
     				if (robotDelivering || (deliveryItem.getWeight() <= INDIVIDUAL_MAX_WEIGHT)) {
     					delivery.deliver(deliveryItem); 
     					inGroup = false;
@@ -141,6 +141,8 @@ public class Robot {
      * @param destination the floor towards which the robot is moving
      */
     private void moveTowards(int destination) {
+    	
+    	//reduces speed of movement by 1/3 when carrying in groups
     	if (inGroup) {
     		inGroupStep += 1;
     		if (inGroupStep == 3) {
@@ -151,6 +153,8 @@ public class Robot {
     	        }
     	        inGroupStep = 0;
     		}
+    		
+    	//speed of movement when carrying an item individually
     	} else {
 	        if(current_floor < destination) {
 	            current_floor++;
@@ -215,10 +219,12 @@ public class Robot {
 		robotDelivering = true;
 	}
 	
-	public String getID() { //remove later
+	public String getID() {
 		return id;
 	}
 	
+	//resets information the robot has on delivering the mail item that now is not
+	//highest priority
 	public void resetPriority() {
 		deliveryItem = null;
 		robotDelivering = false;
